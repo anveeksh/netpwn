@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: Arial, sans-serif; color: #2c3e50; margin: 40px; font-size: 13px; }
+  h1 { color: #1a252f; border-bottom: 3px solid #2980b9; padding-bottom: 8px; }
+  h2 { color: #2980b9; margin-top: 30px; border-left: 4px solid #2980b9; padding-left: 10px; }
+  .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  .meta-table td { padding: 6px 12px; border: 1px solid #ddd; }
+  .meta-table td:first-child { font-weight: bold; background: #f4f6f8; width: 200px; }
+  .risk-badge { display: inline-block; padding: 4px 14px; border-radius: 12px; color: white; font-weight: bold; font-size: 14px; }
+  .badge-Critical { background: #c0392b; }
+  .badge-High { background: #e67e22; }
+  .badge-Medium { background: #f39c12; color: #333; }
+  .badge-Low { background: #27ae60; }
+  table.data { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  table.data th { background: #2980b9; color: white; padding: 8px; text-align: left; font-size: 12px; }
+  table.data td { padding: 7px 8px; border-bottom: 1px solid #eee; font-size: 12px; }
+  table.data tr:nth-child(even) { background: #f9f9f9; }
+  .severity-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+  .summary-card { border-radius: 8px; padding: 14px; text-align: center; color: white; }
+  .summary-card .num { font-size: 28px; font-weight: bold; }
+  .summary-card .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .finding { background: #fef9e7; border-left: 3px solid #f39c12; padding: 6px 10px; margin: 4px 0; font-size: 12px; border-radius: 0 4px 4px 0; }
+  .footer { margin-top: 40px; border-top: 1px solid #ddd; padding-top: 10px; font-size: 11px; color: #999; text-align: center; }
+  .disclaimer { background: #fdf2f2; border: 1px solid #e74c3c; border-radius: 6px; padding: 10px 14px; margin-top: 20px; font-size: 11px; color: #7b241c; }
+</style>
+</head>
+<body>
+
+<h1>Network Penetration Test Report</h1>
+
+<table class="meta-table">
+  <tr><td>Target</td><td>{{ target }}</td></tr>
+  <tr><td>Tester</td><td>{{ tester }}</td></tr>
+  <tr><td>Engagement</td><td>{{ engagement }}</td></tr>
+  <tr><td>Date</td><td>{{ timestamp }}</td></tr>
+  <tr><td>Overall Risk</td><td><span class="risk-badge badge-{{ risk_label }}">{{ risk_label }} (Score: {{ risk_score }})</span></td></tr>
+</table>
+
+<h2>Executive Summary</h2>
+<p>A network penetration test was conducted against <strong>{{ target }}</strong>.
+The assessment identified <strong>{{ total_ports }} open port(s)</strong> and
+<strong>{{ total_vulns }} potential vulnerability/vulnerabilities</strong>.
+The overall risk rating is <strong>{{ risk_label }}</strong>.</p>
+
+<div class="summary-grid">
+  <div class="summary-card" style="background:#c0392b"><div class="num">{{ severity.critical }}</div><div class="lbl">Critical</div></div>
+  <div class="summary-card" style="background:#e67e22"><div class="num">{{ severity.high }}</div><div class="lbl">High</div></div>
+  <div class="summary-card" style="background:#f39c12"><div class="num">{{ severity.medium }}</div><div class="lbl">Medium</div></div>
+  <div class="summary-card" style="background:#27ae60"><div class="num">{{ severity.low }}</div><div class="lbl">Low</div></div>
+</div>
+
+<h2>Open Ports & Services</h2>
+{% if ports %}
+<table class="data">
+  <tr><th>Port</th><th>Protocol</th><th>Service</th><th>Product</th><th>Version</th></tr>
+  {% for p in ports %}
+  <tr>
+    <td>{{ p.port }}</td>
+    <td>{{ p.protocol }}</td>
+    <td>{{ p.service }}</td>
+    <td>{{ p.product }}</td>
+    <td>{{ p.version }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No open ports detected.</p>
+{% endif %}
+
+<h2>Vulnerabilities Identified</h2>
+{% if vulns %}
+<table class="data">
+  <tr><th>Vulnerability</th><th>CVE</th><th>Severity</th></tr>
+  {% for v in vulns %}
+  <tr>
+    <td>{{ v.name }}</td>
+    <td>{{ v.cve }}</td>
+    <td><span class="severity-dot" style="background:{{ v.severity | severity_color }}"></span>{{ v.severity | capitalize }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No NSE vulnerabilities detected in this scan.</p>
+{% endif %}
+
+{% if http_findings %}
+<h2>Web Application Findings (Nikto)</h2>
+{% for f in http_findings %}
+<div class="finding">{{ f }}</div>
+{% endfor %}
+{% endif %}
+
+{% if exploits %}
+<h2>Exploit Availability (Safe Mode)</h2>
+<table class="data">
+  <tr><th>Service</th><th>Exploit</th><th>Status</th></tr>
+  {% for e in exploits %}
+  <tr>
+    <td>{{ e.service }}</td>
+    <td>{{ e.exploit }}</td>
+    <td>{{ e.status }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+<h2>Recommendations</h2>
+<table class="data">
+  <tr><th>Priority</th><th>Action</th></tr>
+  <tr><td>Immediate</td><td>Patch all Critical and High severity findings. Disable unused services.</td></tr>
+  <tr><td>Short-term</td><td>Enforce firewall rules to restrict port exposure. Apply service hardening.</td></tr>
+  <tr><td>Medium-term</td><td>Implement IDS/IPS monitoring. Conduct regular vulnerability scans.</td></tr>
+  <tr><td>Ongoing</td><td>Establish patch management cycle. Schedule quarterly penetration tests.</td></tr>
+</table>
+
+<div class="disclaimer">
+  Legal Disclaimer: This assessment was performed in an isolated lab environment on systems owned and authorized by the tester. Unauthorized use of these techniques against systems without explicit written permission is illegal. This report is for educational and portfolio purposes only.
+</div>
+
+<div class="footer">
+  Generated by NetPwn Framework v1.0 — Anveeksh M Rao | anveekshmrao.com | github.com/anveeksh
+</div>
+
+</body>
+</html>
